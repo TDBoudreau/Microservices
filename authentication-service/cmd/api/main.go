@@ -20,8 +20,7 @@ const webPort = 80
 var counts int64
 
 type Config struct {
-	DB     *sql.DB
-	Models data.Models
+	Repo data.Repository
 }
 
 func main() {
@@ -34,10 +33,7 @@ func main() {
 	}
 
 	// setup up config
-	app := Config{
-		DB:     conn,
-		Models: data.New(conn),
-	}
+	app := Config{}
 
 	// setup web server
 	srv := &http.Server{
@@ -152,4 +148,9 @@ func getSecret(secretPath string) (string, error) {
 		return "", err
 	}
 	return strings.TrimSpace(string(data)), nil
+}
+
+func (app *Config) setupRepo(conn *sql.DB) {
+	db := data.NewPostgresRepository(conn)
+	app.Repo = db
 }
