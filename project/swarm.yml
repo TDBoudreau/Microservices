@@ -1,0 +1,161 @@
+version: '3'
+
+### docker swarm commands:
+## -- start the swarm
+# docker swarm init
+## -- deploy services from config, named myapp
+# docker stack deploy -c swarm.yml myapp
+## -- list active docker services
+# docker service ls
+## -- print the command to join a worker to the swarm
+# docker swarm join-token worker
+## -- add another node manager
+# docker swarm join-token manager
+## -- scale services, e.x.
+# docker service scale myapp_listener-service=3
+## -- update a service
+# docker service update --image tdboudreau/logger-service:1.0.1 myapp_logger-service
+## -- removing swarm
+# docker stack rm myapp
+# docker swarm leave --force
+
+
+services:
+
+  caddy:
+    image: tdboudreau/micro-caddy:1.0.0
+    deploy:
+      mode: replicated
+      replicas: 1
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - caddy_data:/data
+      - caddy_config:/config
+
+  front-end:
+    image: tdboudreau/front-end:1.0.2
+    deploy:
+      mode: replicated
+      replicas: 1
+    environment:
+      BROKER_URL: "http://backend"
+
+  broker-service:
+    image: tdboudreau/broker-service:1.0.1
+    deploy:
+      mode: replicated
+      replicas: 1
+
+  listener-service:
+    image: tdboudreau/listener-service:1.0.0
+    deploy:
+      mode: replicated
+      replicas: 1
+
+  authentication-service:
+    image: tdboudreau/authentication-service:1.0.1
+    deploy:
+      mode: replicated
+      replicas: 1
+    environment:
+      PG_HOST: postgres
+      PG_PORT: 5432
+      PG_USER: /run/secrets/postgres_user
+      PG_PASSWORD: /run/secrets/postgres_password
+      PG_DBNAME: users
+      PG_SSL_MODE: disable
+      PG_TIMEZONE: UTC
+      PG_CONNECT_TIMEOUT: 5
+      # DSN: "host=postgres port=5432 user=postgres password=mbJAYRyYp6ZS0zuyuGSN1Q== dbname=users sslmode=disable timezone=UTC connect_timeout=5"
+    secrets:
+      - postgres_user
+      - postgres_password
+
+  logger-service:
+    image: tdboudreau/logger-service:1.0.2
+    deploy:
+      mode: replicated
+      replicas: 1
+    environment:
+      MONGO_USERNAME: /run/secrets/mongo_user
+      MONGO_PASSWORD: /run/secrets/mongo_password
+    secrets:
+      - mongo_user
+      - mongo_password
+
+  mailer-service:
+    image: tdboudreau/mail-service:1.0.1
+    deploy:
+      mode: replicated
+      replicas: 1
+    environment:
+      MAIL_DOMAIN: localhost
+      MAIL_HOST: mailhog
+      MAIL_PORT: 1025
+      MAIL_ENCRYPTION: none
+      MAIL_USERNAME: ""
+      MAIL_PASSWORD: ""
+      FROM_NAME: "John Smith"
+      FROM_ADDRESS: john.smith@example.com
+
+  rabbitmq:
+    image: 'rabbitmq:3.9-alpine'
+    deploy:
+      mode: global
+
+  mailhog:
+    image: 'mailhog/mailhog:latest'
+    ports:
+      - "8025:8025"
+    deploy:
+      mode: global
+
+  mongo:
+    image: 'mongo:6.0.21'
+    ports:
+      - "27017:27017"
+    deploy:
+      mode: global
+    environment:
+      MONGO_INITDB_DATABASE: logs
+      MONGO_INITDB_ROOT_USERNAME_FILE: /run/secrets/mongo_user
+      MONGO_INITDB_ROOT_PASSWORD_FILE: /run/secrets/mongo_password
+    secrets:
+      - mongo_user
+      - mongo_password
+    volumes:
+      - ./db-data/mongo/:/data/db
+
+  postgres:
+    image: 'postgres:17.4'
+    ports:
+      - "5432:5432"
+    deploy:
+      mode: replicated
+      replicas: 1
+    environment:
+      POSTGRES_USER_FILE: /run/secrets/postgres_user
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
+      POSTGRES_DB: users
+    secrets:
+      - postgres_user
+      - postgres_password
+    volumes:
+      - ./db-data/postgres/:/var/lib/postgresql/data/
+
+volumes:
+  caddy_data:
+    external: true
+  caddy_config:
+
+secrets:
+  mongo_user:
+    external: true
+  mongo_password:
+    external: true
+  postgres_user:
+    external: true
+  postgres_password:
+    external: true

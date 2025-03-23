@@ -1,0 +1,48 @@
+# docker compose file
+# simulating a managed or external database
+
+version: '3'
+
+### docker swarm commands:
+## -- start the swarm
+# docker swarm init
+## -- deploy services from config, named myapp
+# docker stack deploy -c swarm.yml myapp
+## -- list active docker services
+# docker service ls
+## -- print the command to join a worker to the swarm
+# docker swarm join-token worker
+## -- add another node manager
+# docker swarm join-token manager
+## -- scale services, e.x.
+# docker service scale myapp_listener-service=3
+## -- update a service
+# docker service update --image tdboudreau/logger-service:1.0.1 myapp_logger-service
+## -- removing swarm
+# docker stack rm myapp
+# docker swarm leave --force
+
+
+services:
+  postgres:
+    image: 'postgres:17.4'
+    ports:
+      - "5432:5432"
+    deploy:
+      mode: replicated
+      replicas: 1
+    environment:
+      POSTGRES_USER_FILE: /run/secrets/postgres_user
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
+      POSTGRES_DB: users
+    secrets:
+      - postgres_user
+      - postgres_password
+    volumes:
+      - ./db-data/postgres/:/var/lib/postgresql/data/
+
+secrets:
+  postgres_user:
+    external: true
+  postgres_password:
+    external: true

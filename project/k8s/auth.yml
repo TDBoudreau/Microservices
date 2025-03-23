@@ -1,0 +1,65 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: authentication-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: authentication-service
+  template:
+    metadata:
+      labels:
+        app: authentication-service
+    spec:
+      containers:
+      - name: authentication-service
+        image: "tdboudreau/authentication-service:1.0.1"
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        env:
+          - name: PG_HOST
+            value: "host.minikube.internal"
+          - name: PG_PORT
+            value: "5432"
+          - name: PG_USER
+            value: "/etc/postgres-secrets/postgres_user"
+          - name: PG_PASSWORD
+            value: "/etc/postgres-secrets/postgres_password"
+          - name: PG_DBNAME
+            value: users
+          - name: PG_SSL_MODE
+            value: disable
+          - name: PG_TIMEZONE
+            value: UTC
+          - name: PG_CONNECT_TIMEOUT
+            value: "5"
+        ports:
+          - containerPort: 80
+        volumeMounts:
+          - name: postgres-secrets
+            mountPath: "/etc/postgres-secrets"
+            readOnly: true
+      volumes:
+      - name: postgres-secrets
+        secret:
+          secretName: postgres-secret
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: authentication-service
+spec:
+  selector:
+    app: authentication-service
+  ports:
+    - protocol: TCP
+      name: main-port
+      port: 80
+      targetPort: 80

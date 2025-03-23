@@ -1,0 +1,63 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: logger-service
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: logger-service
+  template:
+    metadata:
+      labels:
+        app: logger-service
+    spec:
+      containers:
+      - name: logger-service
+        image: "tdboudreau/logger-service:1.0.2"
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        env:
+          - name: MONGO_USERNAME
+            value: "/etc/mongo-secrets/mongo_user"
+          - name: MONGO_PASSWORD
+            value: "/etc/mongo-secrets/mongo_password"
+        ports:
+          - containerPort: 80
+          - containerPort: 5001
+          - containerPort: 50001
+        volumeMounts:
+          - name: mongo-secrets
+            mountPath: "/etc/mongo-secrets"
+            readOnly: true
+      volumes:
+      - name: mongo-secrets
+        secret:
+          secretName: mongo-secret
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: logger-service
+spec:
+  selector:
+    app: logger-service
+  ports:
+    - protocol: TCP
+      name: main-port
+      port: 80
+      targetPort: 80
+    - protocol: TCP
+      name: rpc-port
+      port: 5001
+      targetPort: 5001
+    - protocol: TCP
+      name: grpc-port
+      port: 50001
+      targetPort: 50001

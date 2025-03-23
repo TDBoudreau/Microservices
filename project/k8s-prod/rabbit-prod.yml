@@ -1,0 +1,182 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: rabbitmq
+  labels:
+    app: rabbitmq
+spec:
+  serviceName: rabbitmq
+  replicas: 3
+  selector:
+    matchLabels:
+      app: rabbitmq
+  template:
+    metadata:
+      labels:
+        app: rabbitmq
+    spec:
+      securityContext:
+        fsGroup: 999  # Standard RabbitMQ group ID
+        runAsUser: 999  # Run as rabbitmq user, not root
+      terminationGracePeriodSeconds: 60  # Give RabbitMQ time to shutdown gracefully
+      containers:
+      - name: rabbitmq
+        image: "rabbitmq:3.12-management-alpine"  # Using version with management plugin
+        imagePullPolicy: Always
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+        ports:
+        - name: amqp
+          containerPort: 5672
+        - name: management
+          containerPort: 15672  # Management UI port
+        - name: epmd
+          containerPort: 4369  # Erlang port mapper daemon
+        - name: cluster
+          containerPort: 25672  # Inter-node communication
+        livenessProbe:
+          exec:
+            command: ["rabbitmq-diagnostics", "status"]
+          initialDelaySeconds: 60
+          periodSeconds: 60
+          timeoutSeconds: 15
+        readinessProbe:
+          exec:
+            command: ["rabbitmq-diagnostics", "check_port_connectivity"]
+          initialDelaySeconds: 20
+          periodSeconds: 60
+        env:
+        - name: RABBITMQ_DEFAULT_USER
+          valueFrom:
+            secretKeyRef:
+              name: rabbitmq-secret
+              key: username
+        - name: RABBITMQ_DEFAULT_PASS
+          valueFrom:
+            secretKeyRef:
+              name: rabbitmq-secret
+              key: password
+        - name: RABBITMQ_ERLANG_COOKIE
+          valueFrom:
+            secretKeyRef:
+              name: rabbitmq-secret
+              key: erlang-cookie
+        - name: RABBITMQ_USE_LONGNAME
+          value: "true"
+        - name: K8S_SERVICE_NAME
+          value: rabbitmq
+        - name: RABBITMQ_NODENAME
+          value: "rabbit@$(K8S_HOSTNAME).$(K8S_SERVICE_NAME).$(K8S_NAMESPACE).svc.cluster.local"
+        - name: K8S_HOSTNAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: K8S_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        volumeMounts:
+        - name: rabbitmq-data
+          mountPath: /var/lib/rabbitmq
+  volumeClaimTemplates:
+  - metadata:
+      name: rabbitmq-data
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: 5Gi
+      storageClassName: standard  # Adjust based on your cloud provider
+
+---
+
+# Service for client connections
+apiVersion: v1
+kind: Service
+metadata:
+  name: rabbitmq
+  labels:
+    app: rabbitmq
+spec:
+  type: ClusterIP
+  selector:
+    app: rabbitmq
+  ports:
+  - name: amqp
+    port: 5672
+    targetPort: 5672
+  - name: management-ui
+    port: 15672
+    targetPort: 15672
+
+---
+
+# Headless service for StatefulSet DNS records
+apiVersion: v1
+kind: Service
+metadata:
+  name: rabbitmq-headless
+  labels:
+    app: rabbitmq
+spec:
+  clusterIP: None
+  selector:
+    app: rabbitmq
+  ports:
+  - name: epmd
+    port: 4369
+    targetPort: 4369
+  - name: cluster-links
+    port: 25672
+    targetPort: 25672
+
+---
+
+# Config for readiness and liveness probes
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: rabbitmq-config
+data:
+  enabled_plugins: |
+    [rabbitmq_management,rabbitmq_peer_discovery_k8s].
+  rabbitmq.conf: |
+    loopback_users.guest = false
+    cluster_formation.peer_discovery_backend = rabbit_peer_discovery_k8s
+    cluster_formation.k8s.host = kubernetes.default.svc.cluster.local
+    cluster_formation.k8s.address_type = hostname
+    cluster_formation.k8s.service_name = rabbitmq-headless
+    queue_master_locator=min-masters
+    disk_free_limit.absolute = 1GB
+
+---
+
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: rabbitmq-pdb
+spec:
+  minAvailable: 2  # Ensure at least 2 pods are available during voluntary disruptions
+  selector:
+    matchLabels:
+      app: rabbitmq
+
+---
+
+# This secret needs to be created separately
+# Example command:
+# kubectl create secret generic rabbitmq-secret \
+#   --from-literal=username=user \
+#   --from-literal=password=YOUR_PASSWORD \
+#   --from-literal=erlang-cookie=SHARED_SECRET_COOKIE_VALUE
+
+# Apply the configuration:
+# kubectl apply -f rabbitmq.yaml
+
+# Verify the cluster status:
+# kubectl exec -it rabbitmq-0 -- rabbitmqctl cluster_status

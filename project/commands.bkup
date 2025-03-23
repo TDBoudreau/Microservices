@@ -1,0 +1,14 @@
+# echo -n "postgres" > postgres_user.txt
+# echo -n "mbJAYRyYp6ZS0zuyuGSN1Q==" > postgres_password.txt
+# echo -n "admin" > mongo_user.txt
+# echo -n "xY3Lrxt1fy0K6WOyr7SybA==" > mongo_password.txt
+
+# docker secret rm postgres_user
+# docker secret rm postgres_password
+# docker secret rm mongo_user
+# docker secret rm mongo_password
+
+docker secret create postgres_user ./secrets/postgres_user.txt
+docker secret create postgres_password ./secrets/postgres_password.txt
+docker secret create mongo_user ./secrets/mongo_user.txt
+docker secret create mongo_password ./secrets/mongo_password.txt

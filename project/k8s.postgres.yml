@@ -1,0 +1,55 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      containers:
+      - name: postgres
+        image: "postgres:17.4"
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        env:
+          - name: POSTGRES_USER_FILE
+            value: "/etc/postgres-secrets/postgres_user"
+          - name: POSTGRES_PASSWORD_FILE
+            value: "/etc/postgres-secrets/postgres_password"
+          - name: POSTGRES_DB
+            value: "users"
+        ports:
+          - containerPort: 5432
+        volumeMounts:
+          - name: postgres-secrets
+            mountPath: "/etc/postgres-secrets"
+            readOnly: true
+      volumes:
+      - name: postgres-secrets
+        secret:
+          secretName: postgres-secret
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+spec:
+  selector:
+    app: postgres
+  ports:
+    - protocol: TCP
+      name: main-port
+      port: 5432
+      targetPort: 5432

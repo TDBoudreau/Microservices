@@ -1,0 +1,17 @@
+project/db-data/mongo/*
+project/db-data/postgres/*
+project/db-data/rabbitmq/*
+project/secrets
+project/caddy_config
+project/caddy_data
+
+authApp
+brokerApp
+frontApp
+listenerApp
+loggerApp
+mailerApp
+
+*.txt
+*.code-workspace
+/.vscode

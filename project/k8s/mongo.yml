@@ -1,0 +1,55 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mongo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mongo
+  template:
+    metadata:
+      labels:
+        app: mongo
+    spec:
+      containers:
+      - name: mongo
+        image: "mongo:6.0.21"
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        env:
+          - name: MONGO_INIT_DB_DATABASE
+            value: "logs"
+          - name: MONGO_INITDB_ROOT_USERNAME_FILE
+            value: "/etc/mongo-secrets/mongo_user"
+          - name: MONGO_INITDB_ROOT_PASSWORD_FILE
+            value: "/etc/mongo-secrets/mongo_password"
+        ports:
+          - containerPort: 27017
+        volumeMounts:
+          - name: mongo-secrets
+            mountPath: "/etc/mongo-secrets"
+            readOnly: true
+      volumes:
+      - name: mongo-secrets
+        secret:
+          secretName: mongo-secret
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mongo
+spec:
+  selector:
+    app: mongo
+  ports:
+    - protocol: TCP
+      name: main-port
+      port: 27017
+      targetPort: 27017
