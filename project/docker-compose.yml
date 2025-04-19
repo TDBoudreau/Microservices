@@ -31,6 +31,8 @@ services:
     deploy:
       mode: replicated
       replicas: 1
+    environment:
+      BROKER_URL: http://localhost:8080
 
   logger-service:
     build:
@@ -69,7 +71,7 @@ services:
       FROM_NAME: "John Smith"
 
   postgres:
-    image: "postgres:14.0"
+    image: "postgres:17.4"
     ports:
       - "5432:5432"
     deploy:
@@ -83,7 +85,7 @@ services:
       - ./db-data/postgres/:/var/lib/postgresql/data/
 
   mongo:
-    image: "mongo:4.2.16-bionic"
+    image: "mongo:6.0.21"
     ports:
       - "27017:27017"
     environment:
