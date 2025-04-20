@@ -4,6 +4,7 @@ project/db-data/rabbitmq/*
 project/secrets
 project/caddy_config
 project/caddy_data
+project/commands.bkup
 
 authApp
 brokerApp

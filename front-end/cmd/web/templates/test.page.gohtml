@@ -56,7 +56,7 @@
 				sent.innerHTML = "empty post request";
 				received.innerHTML = JSON.stringify(data, undefined, 4);
 				if (data.error) {
-					console.log(data.message)
+					output.innerHTML += `<br><strong>Error:</strong> ${data.message}`
 				} else {
 					output.innerHTML += `<br><strong>Response from broker service</strong>: ${data.message}`;
 				}
@@ -143,9 +143,6 @@
 			},
 		}
 
-		console.log(payload);
-
-
 		const headers = new Headers();
 		headers.append("Content-Type", "application/json")
 
@@ -154,9 +151,6 @@
 			body: JSON.stringify(payload),
 			headers: headers
 		}
-
-		console.log(body);
-
 
 		fetch({{print .BrokerURL "/handle"}}, body)
 			.then((response) => response.json())
