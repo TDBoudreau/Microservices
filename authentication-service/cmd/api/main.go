@@ -20,7 +20,8 @@ const webPort = 80
 var counts int64
 
 type Config struct {
-	Repo data.Repository
+	Repo   data.Repository
+	Client *http.Client
 }
 
 func main() {
@@ -33,7 +34,10 @@ func main() {
 	}
 
 	// setup up config
-	app := Config{}
+	app := Config{
+		Client: &http.Client{},
+	}
+	app.setupRepo(conn)
 
 	// setup web server
 	srv := &http.Server{
@@ -85,6 +89,13 @@ func connectToDB() *sql.DB {
 			counts++
 		} else {
 			log.Println("Connected to Postgres!")
+
+			// Test with ping
+			err := connection.Ping()
+			if err != nil {
+				panic(err)
+			}
+
 			return connection
 		}
 
@@ -136,8 +147,6 @@ func loadDSN() (string, error) {
 		dsn.timezone,
 		dsn.timeout,
 	)
-
-	log.Println(dsnString)
 
 	return dsnString, nil
 }
