@@ -1,4 +1,4 @@
-version: '3'
+version: "3"
 
 ### docker swarm commands:
 ## -- start the swarm
@@ -19,9 +19,7 @@ version: '3'
 # docker stack rm myapp
 # docker swarm leave --force
 
-
 services:
-
   caddy:
     image: tdboudreau/micro-caddy:1.0.0
     deploy:
@@ -101,19 +99,19 @@ services:
       FROM_ADDRESS: john.smith@example.com
 
   rabbitmq:
-    image: 'rabbitmq:3.9-alpine'
+    image: "rabbitmq:3.9-alpine"
     deploy:
       mode: global
 
   mailhog:
-    image: 'mailhog/mailhog:latest'
+    image: "mailhog/mailhog:latest"
     ports:
       - "8025:8025"
     deploy:
       mode: global
 
   mongo:
-    image: 'mongo:6.0.21'
+    image: "mongo:6.0.21"
     ports:
       - "27017:27017"
     deploy:
@@ -129,7 +127,7 @@ services:
       - ./db-data/mongo/:/data/db
 
   postgres:
-    image: 'postgres:17.4'
+    image: "postgres:17.4"
     ports:
       - "5432:5432"
     deploy:

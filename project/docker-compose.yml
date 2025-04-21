@@ -8,13 +8,17 @@ services:
       mode: replicated
       replicas: 1
     environment:
+      PG_HOST: postgres
       PG_PORT: "5432"
-      PG_USER: "postgres"
-      PG_PASSWORD: "password"
+      PG_USER: /run/secrets/postgres_user
+      PG_PASSWORD: /run/secrets/postgres_password
       PG_DBNAME: "users"
       PG_SSL_MODE: "disable"
       PG_TIMEZONE: "UTC"
       PG_CONNECT_TIMEOUT: "5"
+    secrets:
+      - postgres_user
+      - postgres_password
 
   broker-service:
     build:
@@ -49,8 +53,11 @@ services:
       mode: replicated
       replicas: 1
     environment:
-      MONGO_USERNAME: "admin"
-      MONGO_PASSWORD: "password"
+      MONGO_USERNAME: /run/secrets/mongo_user
+      MONGO_PASSWORD: /run/secrets/mongo_password
+    secrets:
+      - mongo_user
+      - mongo_password
 
   listener-service:
     build:
@@ -79,6 +86,20 @@ services:
       FROM_ADDRESS: "john.smith@example.com"
       FROM_NAME: "John Smith"
 
+  mongo:
+    image: "mongo:6.0.21"
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_DATABASE: logs
+      MONGO_INITDB_ROOT_USERNAME_FILE: /run/secrets/mongo_user
+      MONGO_INITDB_ROOT_PASSWORD_FILE: /run/secrets/mongo_password
+    secrets:
+      - mongo_user
+      - mongo_password
+    volumes:
+      - ./db-data/mongo/:/data/db
+
   postgres:
     image: "postgres:17.4"
     ports:
@@ -87,22 +108,14 @@ services:
       mode: replicated
       replicas: 1
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: password
+      POSTGRES_USER_FILE: /run/secrets/postgres_user
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
       POSTGRES_DB: users
+    secrets:
+      - postgres_user
+      - postgres_password
     volumes:
       - ./db-data/postgres/:/var/lib/postgresql/data/
-
-  mongo:
-    image: "mongo:6.0.21"
-    ports:
-      - "27017:27017"
-    environment:
-      MONGO_INITDB_DATABASE: logs
-      MONGO_INITDB_ROOT_USERNAME: admin
-      MONGO_INITDB_ROOT_PASSWORD: password
-    volumes:
-      - ./db-data/mongo/:/data/db
 
   mailhog:
     image: "mailhog/mailhog:latest"
@@ -119,3 +132,13 @@ services:
       replicas: 1
     volumes:
       - './db-data/rabbitmq/:/var/lib/rabbitmq/'
+
+secrets:
+  postgres_user:
+    file: ./secrets/postgres_user.txt
+  postgres_password:
+    file: ./secrets/postgres_password.txt
+  mongo_user:
+    file: ./secrets/mongo_user.txt
+  mongo_password:
+    file: ./secrets/mongo_password.txt
