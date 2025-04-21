@@ -61,14 +61,16 @@ func (app *Config) HandleSubmission(w http.ResponseWriter, r *http.Request) {
 	case "auth":
 		app.authenticate(w, requestPayload.Auth)
 	case "log":
-		// app.logItem(w, requestPayload.Log)
-		// app.logEventViaRabbit(w, requestPayload.Log)
+		app.logItem(w, requestPayload.Log)
+	case "log-rpc":
 		app.logItemViaRPC(
 			w,
 			RPCPayload{
 				Name: requestPayload.Log.Name,
 				Data: requestPayload.Log.Data,
 			})
+	case "log-rabbit":
+		app.logEventViaRabbit(w, requestPayload.Log)
 	case "mail":
 		app.sendMail(w, requestPayload.Mail)
 	default:
@@ -99,7 +101,7 @@ func (app *Config) authenticate(w http.ResponseWriter, a AuthPayload) {
 	if response.StatusCode == http.StatusUnauthorized {
 		app.errorJSON(w, errors.New("invalid credentials"))
 		return
-	} else if response.StatusCode != http.StatusOK {
+	} else if response.StatusCode != http.StatusAccepted {
 		app.errorJSON(w, errors.New("error calling auth service"))
 		return
 	}
@@ -274,7 +276,8 @@ func (app *Config) LogViaGRPC(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// TODO: Dial deprecated, use NewClient
-	conn, err := grpc.Dial("logger-service:50001", grpc.WithTransportCredentials(insecure.NewCredentials()), grpc.WithBlock())
+	// conn, err := grpc.Dial("logger-service:50001", grpc.WithTransportCredentials(insecure.NewCredentials()), grpc.WithBlock()) // deprecated functions
+	conn, err := grpc.NewClient("logger-service:50001", grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		app.errorJSON(w, err)
 		return
@@ -299,7 +302,7 @@ func (app *Config) LogViaGRPC(w http.ResponseWriter, r *http.Request) {
 
 	payload := jsonResponse{
 		Error:   false,
-		Message: "logged",
+		Message: "logged via gRCP",
 	}
 
 	app.writeJSON(w, http.StatusAccepted, payload)
