@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
       - name: broker-service
-        image: "tdboudreau/broker-service:1.0.1"
+        image: "tdboudreau/broker-service:1.0.3"
         resources:
           requests:
             memory: "64Mi"

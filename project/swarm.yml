@@ -14,14 +14,14 @@ version: "3"
 ## -- scale services, e.x.
 # docker service scale myapp_listener-service=3
 ## -- update a service
-# docker service update --image tdboudreau/logger-service:1.0.1 myapp_logger-service
+# docker service update --image tdboudreau/logger-service:1.0.3 myapp_logger-service
 ## -- removing swarm
 # docker stack rm myapp
 # docker swarm leave --force
 
 services:
   caddy:
-    image: tdboudreau/micro-caddy:1.0.0
+    image: tdboudreau/micro-caddy:1.0.1
     deploy:
       mode: replicated
       replicas: 1
@@ -33,7 +33,7 @@ services:
       - caddy_config:/config
 
   front-end:
-    image: tdboudreau/front-end:1.0.2
+    image: tdboudreau/front-end:1.0.4
     deploy:
       mode: replicated
       replicas: 1
@@ -41,19 +41,19 @@ services:
       BROKER_URL: "http://backend"
 
   broker-service:
-    image: tdboudreau/broker-service:1.0.1
+    image: tdboudreau/broker-service:1.0.3
     deploy:
       mode: replicated
       replicas: 1
 
-  listener-service:
-    image: tdboudreau/listener-service:1.0.0
-    deploy:
-      mode: replicated
-      replicas: 1
+  # listener-service:
+  #   image: tdboudreau/listener-service:1.0.1
+  #   deploy:
+  #     mode: replicated
+  #     replicas: 1
 
   authentication-service:
-    image: tdboudreau/authentication-service:1.0.1
+    image: tdboudreau/authentication-service:1.0.3
     deploy:
       mode: replicated
       replicas: 1
@@ -72,7 +72,7 @@ services:
       - postgres_password
 
   logger-service:
-    image: tdboudreau/logger-service:1.0.2
+    image: tdboudreau/logger-service:1.0.3
     deploy:
       mode: replicated
       replicas: 1
@@ -84,7 +84,7 @@ services:
       - mongo_password
 
   mailer-service:
-    image: tdboudreau/mail-service:1.0.1
+    image: tdboudreau/mail-service:1.0.2
     deploy:
       mode: replicated
       replicas: 1

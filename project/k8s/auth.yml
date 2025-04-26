@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
       - name: authentication-service
-        image: "tdboudreau/authentication-service:1.0.1"
+        image: "tdboudreau/authentication-service:1.0.3"
         resources:
           requests:
             memory: "128Mi"

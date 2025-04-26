@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
       - name: logger-service
-        image: "tdboudreau/logger-service:1.0.2"
+        image: "tdboudreau/logger-service:1.0.3"
         resources:
           requests:
             memory: "128Mi"

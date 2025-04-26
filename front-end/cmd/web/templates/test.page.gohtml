@@ -18,6 +18,15 @@
         href="javascript:void(0)"
         >Test Auth</a
       >
+      <a
+        id="mailBtn"
+        class="btn btn-outline-secondary"
+        href="javascript:void(0)"
+        >Test Mail</a
+      >
+      <br />
+      <span class="pt-2 fs-4">Logging:</span>
+      &Tab;
       <a id="logBtn" class="btn btn-outline-secondary" href="javascript:void(0)"
         >Test Log</a
       >
@@ -32,12 +41,6 @@
         class="btn btn-outline-secondary"
         href="javascript:void(0)"
         >Test Log RPC</a
-      >
-      <a
-        id="mailBtn"
-        class="btn btn-outline-secondary"
-        href="javascript:void(0)"
-        >Test Mail</a
       >
       <a
         id="grpcBtn"
@@ -226,14 +229,30 @@
         received.innerHTML = JSON.stringify(data, undefined, 4);
 
         if (data.error) {
-          output.innerHTML += `<br><strong>Error:</strong> ${data.message}`;
+          outputMessage(true, data.message);
         } else {
-          output.innerHTML += `<br><strong>Response from broker service</strong>: ${data.message}`;
+          outputMessage(false, data.message);
         }
       })
       .catch((error) => {
-        output.innerHTML += "<br><br>Error: " + error;
+        outputMessage(true, error);
       });
+  };
+
+  const clearDefaultOutput = () => {
+    if (output.innerText == "Output shows here...") {
+      output.innerHTML = "";
+    }
+  };
+
+  const outputMessage = (error, message) => {
+    clearDefaultOutput();
+
+    if (error) {
+      output.innerHTML += "<strong>Error:</strong> " + message + "<br><br>";
+    } else {
+      output.innerHTML += `<strong>Response from broker service</strong>: ${message}<br>`;
+    }
   };
 </script>
 {{ end }}

@@ -6,7 +6,8 @@ COPY loggerApp /app
 
 CMD [ "/app/loggerApp" ]
 
-# docker build -f logger-service.dockerfile -t tdboudreau/logger-service:1.0.2 . && docker push tdboudreau/logger-service:1.0.2
+# Cross platform linux/amd64,linux/arm64
+# docker buildx build -f logger-service.dockerfile --platform linux/amd64,linux/arm64 -t tdboudreau/logger-service:1.0.3 --push .
 
 # generating gRPC code from the command line
 # https://grpc.io/docs/protoc-installation/
