@@ -4,13 +4,11 @@ import (
 	"broker/event"
 	"broker/logs"
 	"bytes"
-	"context"
 	"encoding/json"
 	"errors"
 	"log"
 	"net/http"
 	"net/rpc"
-	"time"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -285,10 +283,8 @@ func (app *Config) LogViaGRPC(w http.ResponseWriter, r *http.Request) {
 	defer conn.Close()
 
 	c := logs.NewLogServiceClient(conn)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
-	defer cancel()
 
-	_, err = c.WriteLog(ctx,
+	_, err = c.WriteLog(r.Context(),
 		&logs.LogRequest{
 			LogEntry: &logs.Log{
 				Name: requestPayload.Log.Name,

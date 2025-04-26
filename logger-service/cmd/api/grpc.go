@@ -7,6 +7,7 @@ import (
 	"log-service/data"
 	"log-service/logs"
 	"net"
+	"time"
 
 	"google.golang.org/grpc"
 )
@@ -17,22 +18,25 @@ type LogServer struct {
 }
 
 func (l *LogServer) WriteLog(ctx context.Context, req *logs.LogRequest) (*logs.LogResponse, error) {
-	// get the input
 	input := req.GetLogEntry()
+	log.Printf("Received log request: %s", input.Name) // Log entry
 
-	// write the log
 	logEntry := data.LogEntry{
 		Name: input.Name,
 		Data: input.Data,
 	}
 
-	err := l.Models.LogEntry.Insert(logEntry)
+	startTime := time.Now() // Start timer
+	err := l.Models.LogEntry.Insert(ctx, logEntry)
+	duration := time.Since(startTime) // Calculate duration
+
 	if err != nil {
+		log.Printf("Failed to insert log entry %s. Duration: %v. Error: %v", input.Name, duration, err) // Log failure + duration
 		res := &logs.LogResponse{Result: "failed"}
 		return res, err
 	}
 
-	// return a response
+	log.Printf("Successfully inserted log entry %s. Duration: %v", input.Name, duration) // Log success + duration
 	res := &logs.LogResponse{Result: "logged!"}
 	return res, nil
 }

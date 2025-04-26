@@ -1,8 +1,6 @@
 package event
 
 import (
-	"log"
-
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
@@ -26,8 +24,6 @@ func (e *Emitter) Push(event []byte, severity string) error {
 		return err
 	}
 	defer channel.Close()
-
-	log.Println("Pushing to channel")
 
 	err = channel.Publish(
 		"logs_topic",
